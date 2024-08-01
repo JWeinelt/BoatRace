@@ -1,0 +1,23 @@
+#   ____              _   _____                       ___
+# |  _ \            | | |  __ \                     |__ \
+# | |_) | ___   __ _| |_| |__) |__ _  ___ ___  __   __ ) |
+# |  _ < / _ \ / _` | __|  _  // _` |/ __/ _ \ \ \ / // /
+# | |_) | (_) | (_| | |_| | \ \ (_| | (_|  __/  \ V // /_
+# |____/ \___/ \__,_|\__|_|  \_\__,_|\___\___|   \_/|____|
+#
+# Copyright (c) 2024 JustCody @ CodeBlocksMC
+# The usage of this plugin outside the CodeBlocksMC.com network is strictly forbidden.
+# Any unintended usage will be recorded by the plugin.
+
+
+# For registering sessions
+session-host: 'localhost'
+session-port: 6565
+
+# MySLQ Stuff
+mysql:
+  host: 'localhost'
+  port: 3306
+  username: 'user'
+  password: 'password'
+  database: 'game_data'
