@@ -1,0 +1,139 @@
+courses:
+  treeway:
+    name: "Wii Maple Treeway"
+    built-by: "JustCody"
+    cup: "Diamond Cup"
+  mario_circuit_1:
+    name: "Mario's Circuit"
+    built-by: "Goaty"
+    cup: "Diamond Cup"
+  dry_dry_desert:
+    name: "Dry Dry Desert"
+    built-by: "Goaty"
+    cup: "Diamond Cup"
+  bowsers_castle_1:
+    name: "Bowser's Castle 1"
+    built-by: "Goaty"
+    cup: "Diamond Cup"
+  palm_beach:
+    name: "Palm Beach"
+    built-by: "JustCody"
+    cup: "Emerald Cup"
+  ghosts_1:
+    name: "Ghost Valley"
+    built-by: "Goaty"
+    cup: "Emerald Cup"
+  coconut_mall:
+    name: "Wii Coconut Mall"
+    built-by: "JustCody"
+    cup: "Emerald Cup"
+  rainbow_1:
+    name: "Rainbow Road"
+    built-by: "JustCody"
+    cup: "Emerald Cup"
+  luigi_circuit:
+    name: "Wii Luigi's Circuit"
+    built-by: "JustCody"
+    cup: "Iron Cup"
+  berlin_byway_1:
+    name: "Tour Berlin Byway"
+    built-by: "JustCody"
+    cup: "Iron Cup"
+  moo_moo_meadows:
+    name: "Wii Moo Moo Meadows"
+    built-by: "JustCody"
+    cup: "Iron Cup"
+  big_tree:
+    name: "Big Treetop"
+    built-by: "JustCody"
+    cup: "Iron Cup"
+
+  riggity_jungle:
+    name: "Riggity Jungle"
+    built-by: "JustCody"
+    cup: "Gold Cup"
+  mushroom_castle:
+    name: "Mushroom Castle"
+    built-by: "JustCody"
+    cup: "Gold Cup"
+  crystal_mines:
+    name: "Crystal Mines"
+    built-by: "JustCody"
+    cup: "Gold Cup"
+  grumble_volcano:
+    name: "Wii Grumble Volcano"
+    built-by: "JustCody"
+    cup: "Gold Cup"
+
+  block_block_cloud_tops:
+    name: "GBA SkyGarden"
+    built-by: "JustCody"
+    cup: "Redstone Cup"
+  goaty_circuit:
+    name: "Goaty Circuit"
+    built-by: "JustCody"
+    cup: "Redstone Cup"
+  spooky_plankwalk:
+    name: "Spooky Plankwalk"
+    built-by: "JustCody"
+    cup: "Redstone Cup"
+  royal_raceway:
+    name: "N64 Royal Raceway"
+    built-by: "JustCody"
+    cup: "Redstone Cup"
+
+  donut_plains:
+    name: "SNES Donut Plains"
+    built-by: "JustCody"
+    cup: "Copper Cup"
+  toads_turnpike:
+    name: "N64 Toad's Turnpike"
+    built-by: "JustCody"
+    cup: "Copper Cup"
+  sunshine_airport:
+    name: "MK8 Sunshine Airport"
+    built-by: "JustCody"
+    cup: "Copper Cup"
+  bowsers_castle_2:
+    name: "GBA Bowser's Castle 3"
+    built-by: "JustCody"
+    cup: "Copper Cup"
+
+  gcn_yoshi_circuit:
+    name: "GCN Yoshi's Circuit"
+    built-by: "JustCody"
+    cup: "Lapislazuli Cup"
+  ice_outpost:
+    name: "MK8 Ice Ice Outpost"
+    built-by: "JustCody"
+    cup: "Lapislazuli Cup"
+  peach_gardens:
+    name: "DS Peach Gardens"
+    built-by: "JustCody"
+    cup: "Lapislazuli Cup"
+  airship_fortress:
+    name: "DS Airship Fortress"
+    built-by: "JustCody"
+    cup: "Lapislazuli Cup"
+
+  sherbet_land:
+    name: "N64 Sherbet Land"
+    built-by: "JustCody"
+    cup: "Glowstone Cup"
+  mushroom_gorge:
+    name: "Wii Mushroom Gorge"
+    built-by: "JustCody"
+    cup: "Glowstone Cup"
+  daisy_circuit:
+    name: "Wii Daisy's Circuit"
+    built-by: "JustCody"
+    cup: "Glowstone Cup"
+  dk_summit:
+    name: "Wii DK Summit"
+    built-by: "JustCody"
+    cup: "Glowstone Cup"
+
+ui:
+  join: "§e%player% §ajoined the game"
+  leave: "§e%player%§c left the game. §7[rejoin]"
+  your-drivers: "Your Drivers"

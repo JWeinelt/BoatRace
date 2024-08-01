@@ -1,0 +1,7 @@
+name: BoatRace
+version: '${project.version}'
+main: de.einfachcody.boatrace.BoatRace
+api-version: 1.19
+prefix: BR
+authors: [EinfachCody]
+description: BoatRace Minigame Plugin.
