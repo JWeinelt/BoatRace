@@ -2,17 +2,19 @@ package de.justcody.cbmc.boatrace.game.map;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import de.codeblocksmc.codelib.GuiBuilder;
+import de.codeblocksmc.codelib.ItemBuilder;
 import de.justcody.cbmc.boatrace.BoatRace;
 import de.justcody.cbmc.boatrace.game.GameType;
-import de.justcody.cbmc.boatrace.util.GuiBuilder;
-import de.justcody.cbmc.boatrace.util.ItemBuilder;
 import de.justcody.cbmc.boatrace.util.locations.LocUtil;
+import de.justcody.cbmc.boatrace.util.locations.LocationWrapper;
 import lombok.Getter;
 import org.bukkit.*;
 import org.bukkit.entity.EnderCrystal;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -52,19 +54,30 @@ public class SetupManager implements Listener {
     private Location pos2;
 
     private final HashMap<UUID, Integer> selectedPaths = new HashMap<>();
+    private final List<LocationSection> deathAreas = new ArrayList<>();
 
     private CameraIntroPath path1;
     private CameraIntroPath path2;
     private CameraIntroPath path3;
 
 
-    public SetupManager(String name) {
-        map = new Map();
-        map.setMapName(name);
+    public SetupManager(String name, boolean exists) {
+        if (!exists) {
+            map = new Map();
+            map.setMapName(name);
 
-        GSON = new GsonBuilder().setPrettyPrinting().create();
-        dataDir = new File(BoatRace.getPlugin().getDataFolder(), "maps");
-        if (dataDir.mkdirs()) BoatRace.getPlugin().getLogger().info("Creating needed folders");
+            GSON = new GsonBuilder().setPrettyPrinting().create();
+            dataDir = new File(BoatRace.getPlugin().getDataFolder(), "maps");
+            if (dataDir.mkdirs()) BoatRace.getPlugin().getLogger().info("Creating needed folders");
+        } else {
+            map = BoatRace.loadMap(name);
+            GSON = new GsonBuilder().setPrettyPrinting().create();
+            dataDir = new File(BoatRace.getPlugin().getDataFolder(), "maps");
+        }
+    }
+
+    public void teleportPlayerToMap(Player player) {
+        player.teleport(LocUtil.fromWrapper(map.getStartingPlaces().get(0)));
     }
 
 
@@ -78,6 +91,7 @@ public class SetupManager implements Listener {
 
 
     public void saveMap() {
+        map.setDeathAreas(deathAreas);
         if (dataDir.mkdirs()) BoatRace.getPlugin().getLogger().info("Creating needed folders");
         String json = GSON.toJson(map);
 
@@ -96,6 +110,7 @@ public class SetupManager implements Listener {
             en.remove();
         }
         for (Player p : Bukkit.getOnlinePlayers()) p.getInventory().clear();
+        HandlerList.unregisterAll(this);
     }
 
 
@@ -230,18 +245,64 @@ public class SetupManager implements Listener {
                 player.closeInventory();
 
             } else if (e.getCurrentItem().getType().equals(Material.DIAMOND)) {
-                if (pos1 == null || pos2 == null) {
-                    player.sendMessage(prefix+"§cPlease make sure to select a region.");
-                    player.closeInventory();
-                    return;
-                }
+                switch (e.getCurrentItem().getItemMeta().getCustomModelData()) {
+                    case 21 -> {
+                        if (pos1 == null || pos2 == null) {
+                            player.sendMessage(prefix+"§cPlease make sure to select a region.");
+                            player.closeInventory();
+                            return;
+                        }
 
-                LocationSection sel = new LocationSection(pos1, pos2);
-                map.setStartLine(sel);
-                player.sendMessage(prefix+"§aThe start line has been set to §b" +
-                        pos1.getBlockX() + ", " + pos1.getBlockY() + ", " + pos1.getBlockZ()+
-                        "§a - §e" + pos2.getBlockX() + ", " + pos2.getBlockY() + ", "+ pos2.getBlockZ());
-                player.closeInventory();
+                        LocationSection sel = new LocationSection(pos1, pos2);
+                        map.setStartLine(sel);
+                        player.sendMessage(prefix+"§aThe start line has been set to §b" +
+                                pos1.getBlockX() + ", " + pos1.getBlockY() + ", " + pos1.getBlockZ()+
+                                "§a - §e" + pos2.getBlockX() + ", " + pos2.getBlockY() + ", "+ pos2.getBlockZ());
+                        player.closeInventory();
+                    }
+                    case 22 -> {
+                        if (pos1 == null || pos2 == null) {
+                            player.sendMessage(prefix+"§cPlease make sure to select a region.");
+                            player.closeInventory();
+                            return;
+                        }
+
+                        LocationSection sel = new LocationSection(pos1, pos2);
+                        map.setCustomLap2(sel);
+                        player.sendMessage(prefix+"§aThe custom lap 2 line has been set to §b" +
+                                pos1.getBlockX() + ", " + pos1.getBlockY() + ", " + pos1.getBlockZ()+
+                                "§a - §e" + pos2.getBlockX() + ", " + pos2.getBlockY() + ", "+ pos2.getBlockZ());
+                        player.closeInventory();
+                    }
+                    case 23 -> {
+                        if (pos1 == null || pos2 == null) {
+                            player.sendMessage(prefix+"§cPlease make sure to select a region.");
+                            player.closeInventory();
+                            return;
+                        }
+
+                        LocationSection sel = new LocationSection(pos1, pos2);
+                        map.setCustomLap3(sel);
+                        player.sendMessage(prefix+"§aThe custom lap 3 line has been set to §b" +
+                                pos1.getBlockX() + ", " + pos1.getBlockY() + ", " + pos1.getBlockZ()+
+                                "§a - §e" + pos2.getBlockX() + ", " + pos2.getBlockY() + ", "+ pos2.getBlockZ());
+                        player.closeInventory();
+                    }
+                    case 24 -> {
+                        if (pos1 == null || pos2 == null) {
+                            player.sendMessage(prefix+"§cPlease make sure to select a region.");
+                            player.closeInventory();
+                            return;
+                        }
+
+                        LocationSection sel = new LocationSection(pos1, pos2);
+                        map.setCustomEnd(sel);
+                        player.sendMessage(prefix+"§aThe custom end line has been set to §b" +
+                                pos1.getBlockX() + ", " + pos1.getBlockY() + ", " + pos1.getBlockZ()+
+                                "§a - §e" + pos2.getBlockX() + ", " + pos2.getBlockY() + ", "+ pos2.getBlockZ());
+                        player.closeInventory();
+                    }
+                }
 
             } else if (e.getCurrentItem().getType().equals(Material.EMERALD)) {
                 map.setCameraPath1(path1);
@@ -251,6 +312,7 @@ public class SetupManager implements Listener {
                 player.sendMessage(prefix + "§aThe map has been saved.");
                 player.getInventory().clear();
                 player.closeInventory();
+                HandlerList.unregisterAll(this);
                 BoatRace.setSetupManager(null);
 
                 for (UUID u : itemBoxes) {
@@ -259,7 +321,7 @@ public class SetupManager implements Listener {
                     en.remove();
                 }
             } else if (e.getCurrentItem().getType().equals(Material.NOTE_BLOCK)) {
-                GuiBuilder b = new GuiBuilder(3, "§aSelect a song");
+                GuiBuilder b = new GuiBuilder("§aSelect a song", 3);
                 b.slot(0, new ItemBuilder(Material.TURTLE_EGG)
                         .displayname("§aBeach")
                         .lore("", "§7§oLeft click to select,","§7§oright click to preview")
@@ -312,6 +374,14 @@ public class SetupManager implements Listener {
                         .displayname("§aTreeway")
                         .lore("", "§7§oLeft click to select,","§7§oright click to preview")
                         .build());
+                b.slot(14, new ItemBuilder(Material.GHAST_SPAWN_EGG)
+                        .displayname("§aGhosts")
+                        .lore("", "§7§oLeft click to select,","§7§oright click to preview")
+                        .build());
+                b.slot(12, new ItemBuilder(Material.RAW_GOLD)
+                        .displayname("§aGoldmine")
+                        .lore("", "§7§oLeft click to select,","§7§oright click to preview")
+                        .build());
 
 
 
@@ -333,12 +403,17 @@ public class SetupManager implements Listener {
                 }
                 player.sendMessage(prefix+"§c§oSetup process canceled");
                 player.closeInventory();
+                HandlerList.unregisterAll(this);
             } else if (e.getCurrentItem().getType().equals(Material.FIREWORK_ROCKET)) {
                 player.closeInventory();
                 map.addStartingPlace(LocUtil.fromBukkit(player.getLocation()));
                 player.sendMessage(prefix+"§aStarting place has been added.");
             } else if (e.getCurrentItem().getType().equals(Material.ENDER_EYE)) {
                 player.openInventory(getPathsMenu());
+            } else if (e.getCurrentItem().getType().equals(Material.SKELETON_SKULL)) {
+                player.closeInventory();
+                deathAreas.add(new LocationSection(pos1, pos2));
+                player.sendMessage(prefix+"§aReset zone has been added.");
             }
         } else if (e.getView().getTitle().equalsIgnoreCase("§aSelect a song")) {
             e.setCancelled(true);
@@ -425,14 +500,21 @@ public class SetupManager implements Listener {
     }
 
     private Inventory getMainGUI() {
-        GuiBuilder g = new GuiBuilder(3, "§aMap setup");
+        GuiBuilder g = new GuiBuilder("§aMap setup", 3);
         g.slot(9, new ItemBuilder(Material.END_PORTAL_FRAME).displayname("§aAdd Checkpoint").lore("§7§oClick here to add a"
                 , "§7§oCheckpoint to this map", "§7§ofor your §a§n§ocurrent wand locations").build());
         g.slot(11, new ItemBuilder(Material.DIAMOND).customModelData(21).displayname("§aSet start line")
                 .lore("§7§oRegister the selected region", "§7§oas the start line.").build());
+        g.slot(3, new ItemBuilder(Material.DIAMOND).customModelData(22).displayname("§aSet custom lap 2 line")
+                .lore("§7§oRegister the selected region", "§7§oas the start line.").build());
+        g.slot(4, new ItemBuilder(Material.DIAMOND).customModelData(23).displayname("§aSet custom lap 3 line")
+                .lore("§7§oRegister the selected region", "§7§oas the start line.").build());
+        g.slot(5, new ItemBuilder(Material.DIAMOND).customModelData(24).displayname("§aSet custom finish")
+                .lore("§7§oRegister the selected region", "§7§oas the start line.").build());
         g.slot(13, new ItemBuilder(Material.NOTE_BLOCK).displayname("§aSelect song")
                 .lore("§7§oChoose which song should be", "§7§oplayed during game.").build());
         g.slot(15, new ItemBuilder(Material.FIREWORK_ROCKET).displayname("§aAdd start position").build());
+        g.slot(16, new ItemBuilder(Material.SKELETON_SKULL).displayname("§aAdd reset zone").build());
         g.slot(17, new ItemBuilder(Material.ENDER_EYE).displayname("§aCamera Paths").lore("", "§7§oDefine camera path for start here.").build());
         g.slot(18, new ItemBuilder(Material.EMERALD).displayname("§aSave map").lore("§7§oClick here to save this map in storage.").build());
 
@@ -442,7 +524,7 @@ public class SetupManager implements Listener {
     }
 
     private Inventory getPathsMenu() {
-        GuiBuilder g = new GuiBuilder(3, "§aMap Setup - Camera Paths");
+        GuiBuilder g = new GuiBuilder("§aMap Setup - Camera Paths", 3);
 
         g.slot(1, new ItemBuilder(Material.ENDER_PEARL).displayname("§aPath 1").lore("","§7§oUse the items below to"
                 ,"§7§oconfigure path 1.","","§aPath time: §64 seconds").build());

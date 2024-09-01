@@ -16,7 +16,6 @@ import java.util.List;
 
 public class BoatRaceCompletion implements TabCompleter {
 
-    private final List<String> completions = new ArrayList<>();
     private final File dataDir;
 
 
@@ -28,22 +27,28 @@ public class BoatRaceCompletion implements TabCompleter {
     @Nullable
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
-
+        List<String> completions = new ArrayList<>();
         if (args.length == 1) {
             StringUtil.copyPartialMatches(args[0], List.of("game", "admin", "setup", "cup", "totem", "spawncar"), completions);
         }
         if (args.length == 2) {
             if (args[0].equalsIgnoreCase("setup")) {
-                complete(args[1], "<Name>");
+                complete(completions, args[1], "<Name>");
             } else if (args[0].equalsIgnoreCase("game")) {
-                complete(args[1], "join", "start");
+                complete(completions, args[1], "join", "start");
+            } else if (args[0].equalsIgnoreCase("admin")) {
+                complete(completions, args[1], "cups", "settime");
             }
         } else if (args.length == 3) {
             if (args[0].equalsIgnoreCase("game")) {
                 if (args[1].equalsIgnoreCase("create")) {
-                    complete(args[2], getAvailableMaps());
+                    complete(completions, args[2], getAvailableMaps());
                 } else if (args[1].equalsIgnoreCase("join")) {
-                    complete(args[2], List.of("RACE", "BATTLE"));
+                    complete(completions, args[2], BoatRace.getRaceManager().getCups());
+                }
+            } else if (args[0].equalsIgnoreCase("admin")) {
+                if (args[1].equalsIgnoreCase("settime")) {
+                    complete(completions, args[2], BoatRace.getRaceManager().getAvailableMaps());
                 }
             }
         }
@@ -52,13 +57,13 @@ public class BoatRaceCompletion implements TabCompleter {
     }
 
 
-    private void complete(String arg, String... completions) {
-        this.completions.clear();
-        StringUtil.copyPartialMatches(arg, Arrays.asList(completions), this.completions);
+    private void complete(List<String> list, String arg, String... completions) {
+        list.clear();
+        StringUtil.copyPartialMatches(arg, Arrays.asList(completions), list);
     }
-    private void complete(String arg, List<String> completions) {
-        this.completions.clear();
-        StringUtil.copyPartialMatches(arg, completions, this.completions);
+    private void complete(List<String> list, String arg, List<String> completions) {
+        list.clear();
+        StringUtil.copyPartialMatches(arg, completions, list);
     }
     private List<String> getAvailableMaps() {
         List<String> maps = new ArrayList<>();

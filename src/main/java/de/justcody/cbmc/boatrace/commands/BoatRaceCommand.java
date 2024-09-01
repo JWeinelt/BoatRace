@@ -6,7 +6,6 @@ import de.justcody.cbmc.boatrace.game.Game;
 import de.justcody.cbmc.boatrace.game.GameType;
 import de.justcody.cbmc.boatrace.game.map.SetupManager;
 import de.justcody.cbmc.boatrace.util.EffectUtil;
-import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -26,48 +25,80 @@ public class BoatRaceCommand implements CommandExecutor {
         }
 
         Player player = (Player) sender;
+        if (label.equalsIgnoreCase("boatrace")) {
+            if (!player.hasPermission("boatrace.command")) {
+                player.sendMessage(prefix + "§cYou don't have the permission to use this command.");
+                return false;
+            }
 
-        if (args.length == 0) {
-            player.sendMessage(prefix + "§cIncomplete command.");
-            player.sendMessage(prefix + "§eRunning BoatRace Version " + BoatRace.getVersion());
-            return false;
-        }
-        if (args[0].equalsIgnoreCase("spawncar")) {
-            CarManager.createCar(player);
-        } else if (args[0].equalsIgnoreCase("setup")) {
-            // SETUP
-            if (args.length == 2) {
-                //TODO: Make option to continue setup
-                BoatRace.setSetupManager(new SetupManager(args[1]));
-                BoatRace.getPlugin().getServer().getPluginManager().registerEvents(BoatRace.getSetupManager(), BoatRace.getPlugin());
-                BoatRace.getSetupManager().startSetup(player);
+            if (args.length == 0) {
+                player.sendMessage(prefix + "§cIncomplete command.");
+                player.sendMessage(prefix + "§eRunning BoatRace Version " + BoatRace.getVersion());
+                return false;
             }
-        } else if (args[0].equalsIgnoreCase("cup")) {
-            if (args.length == 4) {
-                if (args[1].equalsIgnoreCase("add")) {
-                    String name = args[2].replace("_", " ");
-                    Material display = Material.getMaterial(args[3]);
-                    if (display == null) {
-                        player.sendMessage(prefix+"§cThe display item must be a valid item from list.");
-                        return false;
+            if (args[0].equalsIgnoreCase("spawncar")) {
+                CarManager.createCar(player);
+            } else if (args[0].equalsIgnoreCase("setup")) {
+                // SETUP
+                if (args.length == 2) {
+                    if (BoatRace.getRaceManager().getAvailableMaps().contains(args[1])) {
+                        // Map already exists; must be continued.
+                        BoatRace.setSetupManager(new SetupManager(args[1], true));
+                        BoatRace.getPlugin().getServer().getPluginManager().registerEvents(BoatRace.getSetupManager(), BoatRace.getPlugin());
+                        BoatRace.getSetupManager().startSetup(player);
+                        BoatRace.getSetupManager().teleportPlayerToMap(player);
+                        player.sendMessage(prefix+"§bContinuing setup for §d"+args[1]);
+                    } else {
+                        BoatRace.setSetupManager(new SetupManager(args[1], false));
+                        BoatRace.getPlugin().getServer().getPluginManager().registerEvents(BoatRace.getSetupManager(), BoatRace.getPlugin());
+                        BoatRace.getSetupManager().startSetup(player);
                     }
-                    BoatRace.getRaceManager().addCup(name, display);
-                    BoatRace.getRaceManager().saveCups();
-                    player.sendMessage(prefix+"§aSaved the cup §e"+name+"§a with display item §e"+display);
                 }
-            }
-        } else if (args[0].equalsIgnoreCase("totem") && args.length == 2) {
-            new EffectUtil().playTotemAnimation(player, Integer.parseInt(args[1]));
-        } else if (args[0].equalsIgnoreCase("game")) {
-            if (args[1].equalsIgnoreCase("join")) {
-                BoatRace.getRaceManager().joinGame(player, GameType.RACE);
-            } else if (args[1].equalsIgnoreCase("start")) {
-                Game game = BoatRace.getRaceManager().getPlayerGame(player.getUniqueId());
-                if (game == null) {
-                    player.sendMessage(prefix+"§cYou are not in a game.");
+            } else if (args[0].equalsIgnoreCase("cup")) {
+                if (args.length == 2) {
+                    if (args[1].equalsIgnoreCase("add")) {
+                        BoatRace.getCupManager().createInstance(player);
+                    }
+                }
+            } else if (args[0].equalsIgnoreCase("totem") && args.length == 2) {
+                new EffectUtil().playTotemAnimation(player, Integer.parseInt(args[1]));
+            } else if (args[0].equalsIgnoreCase("game")) {
+                if (args.length == 1) {
+                    player.sendMessage(prefix + "§cIncomplete command.");
                     return false;
                 }
-                game.prepareForStart();
+                if (args[1].equalsIgnoreCase("join")) {
+                    //BoatRace.getRaceManager().joinGame(player, GameType.RACE);
+                    if (args.length == 2) {
+                        player.sendMessage(prefix + "§cPlease specify a cup.");
+                        return false;
+                    }
+                    BoatRace.getRaceManager().createNewGame(GameType.RACE, args[2]);
+                    BoatRace.getRaceManager().joinGame(player, GameType.RACE);
+                } else if (args[1].equalsIgnoreCase("joinmap")) {
+                    BoatRace.getRaceManager().createNewGameMap(GameType.RACE, args[2]);
+                    BoatRace.getRaceManager().joinGame(player, GameType.RACE);
+                } else if (args[1].equalsIgnoreCase("start")) {
+                    Game game = BoatRace.getRaceManager().getPlayerGame(player.getUniqueId());
+                    if (game == null) {
+                        player.sendMessage(prefix + "§cYou are not in a game.");
+                        return false;
+                    }
+                    game.prepareForStart();
+                }
+            } else if (args[0].equalsIgnoreCase("admin")) {
+                if (args.length == 2) {
+                    if (args[1].equalsIgnoreCase("cups")) {
+                        player.sendMessage(prefix + "§cWork in progress");
+                    }
+                } else if (args.length == 3) {
+                    if (args[1].equalsIgnoreCase("settime")) {
+                        long time = player.getLocation().getWorld().getTime();
+                        BoatRace.getRaceManager().setTimeZone(args[2], time);
+                        BoatRace.getRaceManager().saveTimeZones();
+                        player.sendMessage(prefix+"§bThe time for map §e"+args[2]+"§b has been set to §e"+time);
+                    }
+                }
             }
         }
         return false;

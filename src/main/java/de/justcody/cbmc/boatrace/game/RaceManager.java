@@ -1,5 +1,6 @@
 package de.justcody.cbmc.boatrace.game;
 
+import com.destroystokyo.paper.ClientOption;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -8,17 +9,22 @@ import de.justcody.cbmc.boatrace.game.map.CameraIntroPath;
 import de.justcody.cbmc.boatrace.game.map.CupInst;
 import de.justcody.cbmc.boatrace.game.map.Map;
 import de.justcody.cbmc.boatrace.util.locations.LocUtil;
+import de.justcody.cbmc.translationsystem.TranslationAPI;
+import it.unimi.dsi.fastutil.Hash;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Boat;
 import org.bukkit.entity.Player;
+import org.bukkit.event.HandlerList;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import javax.annotation.Nullable;
 import java.io.*;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,13 +32,51 @@ public class RaceManager {
     private final Gson GSON;
     private final File dataDir;
 
-    private List<Game> games = new ArrayList<>();
+    private final List<Game> games = new ArrayList<>();
     private final List<Cup> loadedCups = new ArrayList<>();
+
+    private HashMap<String, Long> mapTimeZones = new HashMap<>();
 
     public RaceManager() {
         GSON = new GsonBuilder().setPrettyPrinting().create();
         dataDir = BoatRace.getPlugin().getDataFolder();
         BoatRace.getPlugin().getDataFolder().mkdirs();
+    }
+
+    public void setTimeZone(String map, long time) {
+        mapTimeZones.put(map, time);
+    }
+
+    public long getTime(String map) {
+        return mapTimeZones.getOrDefault(map, 0L);
+    }
+
+    public void saveTimeZones() {
+        String json = GSON.toJson(mapTimeZones);
+
+        try (FileWriter writer = new FileWriter(new File(dataDir, "timeZones.json"))) {
+            writer.write(json);
+            writer.flush();
+        } catch (IOException e) {
+            BoatRace.getLog().warning(e.getMessage());
+        }
+    }
+
+    public void loadTimes() {
+        if (!(new File(dataDir, "timeZones.json").exists())) saveCups();
+        try (BufferedReader br = new BufferedReader(new FileReader(new File(dataDir, "timeZones.json")));) {
+            StringBuilder jsonStringBuilder = new StringBuilder();
+            String line;
+            while ((line = br.readLine()) != null) {
+                jsonStringBuilder.append(line);
+            }
+
+            Type mapType = new TypeToken<HashMap<String, Long>>(){}.getType();
+            mapTimeZones = GSON.fromJson(jsonStringBuilder.toString(), mapType);
+
+        } catch (IOException e) {
+            BoatRace.getLog().warning(e.getMessage());
+        }
     }
 
     public void joinGame(Player player, GameType t) {
@@ -54,15 +98,112 @@ public class RaceManager {
         return null;
     }
 
-    private Game createNewGame(GameType t) {
-        Game g = new Game(t, "Circuit"); //TODO: Make relative
+    public Game createNewGame(GameType t) {
+        Game g = new Game(t, "Redline"); //TODO: Make relative
         games.add(g);
         return g;
+    }
+
+    public Game createNewGameMap(GameType t, String mapName) {
+        Game g = new Game(t, mapName);
+        games.add(g);
+        return g;
+    }
+    @Nullable
+    public Game createNewGame(GameType t, String cupName) {
+        Cup cup = getCup(cupName);
+        if (cup == null) {
+            return null;
+        }
+        if (cup.getTrack1() == null) {
+            BoatRace.getLog().severe("Could not find track 1");
+            return null;
+        }
+        Game g = new Game(t, cup.getTrack1());
+        g.setCup(cupName);
+        games.add(g);
+        return g;
+    }
+    public void continueGame(Game game) {
+        Cup cup = getCup(game.getCup());
+        if (cup == null) return;
+        GameResult gameResult = getGameResult(cup, game);
+        HandlerList.unregisterAll(game);
+        goOnCup(game, gameResult);
+    }
+
+    public void goOnCup(Game game, GameResult result) {
+        if (!result.equals(GameResult.WINNING_SCENE)) {
+            String map = getNextTrack(game, getCup(game.getCup()));
+            Game game1 = new Game(game, map, game.getPoints());
+            game1.prepareForStart();
+            games.add(game1);
+            games.remove(game);
+        }
+    }
+
+
+    private GameResult getGameResult(Cup cup, Game game) {
+        int lastTrack;
+        if (game.getMapName().equals(cup.getTrack1())) {
+            lastTrack = 1;
+        } else if (game.getMapName().equals(cup.getTrack2())) {
+            lastTrack = 2;
+        } else if (game.getMapName().equals(cup.getTrack3())) {
+            lastTrack = 3;
+        } else if (game.getMapName().equals(cup.getTrack4())) {
+            lastTrack = 4;
+        } else lastTrack = 4;
+        switch (lastTrack) {
+            case 1 -> {
+                return GameResult.NEXT_RACE_2;
+            }
+            case 2 -> {
+                return GameResult.NEXT_RACE_3;
+            }
+            case 3 -> {
+                return GameResult.NEXT_RACE_4;
+            }
+            default -> {
+                return GameResult.WINNING_SCENE;
+            }
+        }
+    }
+
+    public String getNextTrack(Game game, Cup cup) {
+        int lastTrack;
+        if (game.getMapName().equals(cup.getTrack1())) {
+            lastTrack = 1;
+        } else if (game.getMapName().equals(cup.getTrack2())) {
+            lastTrack = 2;
+        } else if (game.getMapName().equals(cup.getTrack3())) {
+            lastTrack = 3;
+        } else if (game.getMapName().equals(cup.getTrack4())) {
+            lastTrack = 4;
+        } else lastTrack = 4;
+        switch (lastTrack) {
+            case 1 -> {
+                return cup.getTrack2();
+            }
+            case 2 -> {
+                return cup.getTrack3();
+            }
+            case 3 -> {
+                return cup.getTrack4();
+            }
+            default -> {
+                return "Winning";
+            }
+        }
     }
 
 
     public void addCup(String name, Material mat) {
         loadedCups.add(new Cup(name, mat));
+    }
+
+    public void addCup(Cup cup) {
+        loadedCups.add(cup);
     }
 
     public List<String> getCups() {
@@ -74,15 +215,22 @@ public class RaceManager {
 
         return s;
     }
+    @Nullable
+    public Cup getCup(String name) {
+        for (Cup c : loadedCups) if (c.getName().equals(name)) return c;
+        return null;
+    }
 
     public void runMapIntro(CameraIntroPath p1, CameraIntroPath p2, CameraIntroPath p3, Player player, Map map, GameMode modeAfter) {
+        //player.getInventory().clear();
+        TranslationAPI api = TranslationAPI.getInstance();
         previewCameraPath(p1, player, GameMode.SPECTATOR);
         player.closeInventory();
 
         new BukkitRunnable() {
             @Override
             public void run() {
-                player.sendTitle("§aBoatRace", "§eMap: "+map.getMapName(), 10, 70, 20);
+                player.sendTitle("§aBoatRace", "§eMap: "+api.translate(player.getClientOption(ClientOption.LOCALE).split("_")[0], "boatrace.map."+map.getMapName()), 10, 70, 20);
             }
         }.runTaskLater(BoatRace.getPlugin(), 20*2);
 
@@ -148,6 +296,10 @@ public class RaceManager {
 
             @Override
             public void run() {
+
+                if (ticks == totalTicks - 10) {
+                    player.sendTitle("\uE000", "", 10, 20, 10);
+                }
                 if (ticks >= totalTicks) {
                     s1.remove();
                     cancel();
@@ -160,6 +312,8 @@ public class RaceManager {
 
                 // Teleportiere den ArmorStand zur neuen Position
                 s1.teleport(currentLocation);
+                player.setSpectatorTarget(s1);
+                player.teleport(s1.getLocation());
 
                 ticks++;
             }
@@ -192,11 +346,21 @@ public class RaceManager {
             Type mapType = new TypeToken<List<CupInst>>(){}.getType();
             List<CupInst> c = GSON.fromJson(jsonStringBuilder.toString(), mapType);
             for (CupInst i : c) {
-                loadedCups.add(new Cup(i.getName(), Material.getMaterial(i.getDisplayMaterial())));
+                loadedCups.add(new Cup(i.getName(), i.getDisplayMaterial(), i.getTrack1(), i.getTrack2(), i.getTrack3(), i.getTrack4()));
                 BoatRace.getPlugin().getLogger().info("Found and loaded cup: " + i.getName());
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public List<String> getAvailableMaps() {
+        List<String> maps = new ArrayList<>();
+        File[] files = new File(dataDir, "maps").listFiles();
+        if (files == null) return maps;
+        for (File f : files) {
+            if (f.isFile()) maps.add(f.getName().replace(".json", ""));
+        }
+        return maps;
     }
 }

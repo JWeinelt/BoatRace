@@ -5,14 +5,17 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import de.justcody.cbmc.boatrace.commands.BoatRaceCommand;
 import de.justcody.cbmc.boatrace.commands.BoatRaceCompletion;
-import de.justcody.cbmc.boatrace.game.CarManager;
-import de.justcody.cbmc.boatrace.game.PreGameListener;
-import de.justcody.cbmc.boatrace.game.PreGameLobbyManager;
-import de.justcody.cbmc.boatrace.game.RaceManager;
+import de.justcody.cbmc.boatrace.commands.WarpCommand;
+import de.justcody.cbmc.boatrace.commands.WarpCompleter;
+import de.justcody.cbmc.boatrace.database.MySQL;
+import de.justcody.cbmc.boatrace.game.*;
 import de.justcody.cbmc.boatrace.game.map.Map;
 import de.justcody.cbmc.boatrace.game.map.SetupManager;
+import de.justcody.cbmc.boatrace.game.warps.WarpManager;
+import de.justcody.cbmc.boatrace.util.papi.BoatRacePAPI;
 import lombok.Getter;
 import lombok.Setter;
+import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -36,10 +39,18 @@ public final class BoatRace extends JavaPlugin {
     @Setter
     private static RaceManager raceManager;
     @Getter
+    private static CupManager cupManager;
+    @Getter
+    private static WarpManager warpManager;
+    @Getter
     @Setter
     private static PreGameLobbyManager preGameLobbyManager;
-    private Logger log;
+    @Getter
+    private static Logger log;
+    @Getter
+    private static MySQL mySQL;
     private static final Gson GSON =  new GsonBuilder().setPrettyPrinting().create();
+    private PreGameListener preGameListener;
 
 
     @Override
@@ -60,32 +71,55 @@ public final class BoatRace extends JavaPlugin {
         log.info("Done!");
 
         log.info("Starting connection to MySQL database...");
-        //TODO: Make MySQL Stuff
+        mySQL = new MySQL();
+        mySQL.connect();
         log.info("Done!");
 
         log.info("Loading cup data...");
         raceManager.loadCups();
+        log.info("Loading time data...");
+        raceManager.loadTimes();
         log.info("Done! Continuing with the commands...");
         registerCommands();
         log.info("Commands registered.");
 
+        log.info("Creating managers...");
         preGameLobbyManager = new PreGameLobbyManager();
+        preGameListener = new PreGameListener();
+        cupManager = new CupManager();
+        warpManager = new WarpManager();
 
-        getServer().getPluginManager().registerEvents(new PreGameListener(), this);
+        log.info("Registering important listeners...");
+        getServer().getPluginManager().registerEvents(preGameListener, this);
+        getServer().getPluginManager().registerEvents(cupManager, this);
+        getServer().getPluginManager().registerEvents(warpManager, this);
+
+
+        log.info("Executing generic joins...");
+        Bukkit.getOnlinePlayers().forEach(p->preGameListener.genericJoin(p));
+
+        log.info("Starting Placeholder API injection...");
+        new BoatRacePAPI().register();
+
+        log.info("Plugin startup finished!");
     }
 
     @Override
     public void onDisable() {
-        sendLogo();
-        log.info("Goodbye!");
+        log.info("Deleting car instances...");
         CarManager.deleteAll();
+        log.info("Goodbye!");
     }
 
     private void registerCommands() {
         PluginCommand mainCmd = getCommand("boatrace");
+        PluginCommand warpCmd = getCommand("warp");
         if (mainCmd == null) return;
         mainCmd.setExecutor(new BoatRaceCommand());
         mainCmd.setTabCompleter(new BoatRaceCompletion());
+        if (warpCmd == null) return;
+        warpCmd.setExecutor(new WarpCommand(warpManager));
+        warpCmd.setTabCompleter(new WarpCompleter(warpManager));
     }
 
 

@@ -27,6 +27,11 @@ public class Map {
     private CameraIntroPath cameraPath2;
     private CameraIntroPath cameraPath3;
 
+    private List<LocationSection> deathAreas = new ArrayList<>();
+    private LocationSection customLap2;
+    private LocationSection customLap3;
+    private LocationSection customEnd;
+
     public void addItemBox(Location l) {
         itemBoxes.add(LocUtil.fromBukkit(l));
     }
